@@ -128,13 +128,13 @@ func parseUrl(gitRemoteOutput string) string {
 
 func parseGithubDomainSsh(gitSshUrl string) string {
 	log.Debug().Msg("parseGithubDomainSsh")
-	r, _ := regexp.Compile(`.*push`)
+	r := regexp.MustCompile(`.*push`)
 	result1 := r.FindString(gitSshUrl)
 	log.Debug().Msgf("result1: %s", result1)
-	r, _ = regexp.Compile(`@([^:].)*`)
+	r = regexp.MustCompile(`@([^:].)*`)
 	result2 := r.FindString(result1)
 	log.Debug().Msgf("result2: %s", result2)
-	r, _ = regexp.Compile(`[^@].*`)
+	r = regexp.MustCompile(`[^@].*`)
 	result3 := r.FindString(result2)
 	log.Debug().Msgf("result3: %s", result3)
 	return result3
@@ -142,10 +142,10 @@ func parseGithubDomainSsh(gitSshUrl string) string {
 
 func parseGithubRepoOwnerSsh(gitSshUrl string) string {
 	log.Debug().Msg("parseGithubRepoOwnerSsh")
-	r, _ := regexp.Compile(`:.*/`)
+	r := regexp.MustCompile(`:.*/`)
 	result1 := r.FindString(gitSshUrl)
 	log.Debug().Msgf("result1: %s", result1)
-	r, _ = regexp.Compile(`[^:][\w|\d|-|\.]*`)
+	r = regexp.MustCompile(`[^:][\w|\d|-|\.]*`)
 	result2 := r.FindString(result1)
 	log.Debug().Msgf("result2: %s", result2)
 	return result2
@@ -153,10 +153,10 @@ func parseGithubRepoOwnerSsh(gitSshUrl string) string {
 
 func parseGithubRepoNameSsh(gitSshUrl string) string {
 	log.Debug().Msgf("parseGithubRepoNameSsh %s", gitSshUrl)
-	r, _ := regexp.Compile(`/.*\.git`)
+	r := regexp.MustCompile(`/.*\.git`)
 	result1 := r.FindString(gitSshUrl)
 	log.Debug().Msgf("result1: %s", result1)
-	r, _ = regexp.Compile(`[^/](\w|\d|-|\.)*`)
+	r = regexp.MustCompile(`[^/](\w|\d|-|\.)*`)
 	result2 := r.FindString(result1)
 	log.Debug().Msgf("result2: %s", result2)
 	result3 := strings.TrimSuffix(result2, ".git")
