@@ -78,7 +78,7 @@ type githubOrigin struct {
 func (gh *githubOrigin) getUrl() string {
 	log.Debug().Msg("githubOrigin#getUrl")
 	log.Debug().Msgf("%+v", gh)
-	return fmt.Sprintf("http://%s/%s/%s", gh.domain, gh.repoOwner, gh.repoName)
+	return fmt.Sprintf("https://%s/%s/%s", gh.domain, gh.repoOwner, gh.repoName)
 }
 
 func (gur gitUrlRepresentation) String() string {
@@ -112,17 +112,18 @@ func parseUrl(gitRemoteOutput string) string {
 		gh.domain = parseGithubDomainSsh(gitRemoteOutput)
 		gh.repoName = parseGithubRepoNameSsh(gitRemoteOutput)
 		gh.repoOwner = parseGithubRepoOwnerSsh(gitRemoteOutput)
-		return gh.getUrl()
 	case https:
 		gh.domain = parseGithubDomainHttps(gitRemoteOutput)
 		gh.repoName = parseGithubRepoNameHttps(gitRemoteOutput)
 		gh.repoOwner = parseGithubRepoOwnerHttps(gitRemoteOutput)
-		println("https git remotes not supported yet")
-		os.Exit(1)
-		return gh.getUrl()
 	default:
 		return "invalid gitUrlRepr"
 	}
+	if gh.domain == "" || gh.repoName == "" || gh.repoOwner == "" {
+		log.Error().Msgf("Failed to parse one or more parts of the GitHub origin, domain: %s, repoName: %s, repoOwner: %s", gh.domain, gh.repoName, gh.repoOwner)
+		return ""
+	}
+	return gh.getUrl()
 }
 
 func parseGithubDomainSsh(gitSshUrl string) string {
@@ -164,23 +165,31 @@ func parseGithubRepoNameSsh(gitSshUrl string) string {
 }
 
 func parseGithubDomainHttps(gitHttpsUrl string) string {
-	r, _ := regexp.Compile(`https://\w*\.com`)
-	result1 := r.FindString(gitHttpsUrl)
-	return result1
+	r := regexp.MustCompile(`https://([^/]+)`)
+	match := r.FindStringSubmatch(gitHttpsUrl)
+	if len(match) > 1 {
+		return match[1]
+	}
+	log.Warn().Msg("Could not parse domain from HTTPS URL")
+	return ""
 }
 
 func parseGithubRepoOwnerHttps(gitHttpsUrl string) string {
-	r, _ := regexp.Compile(`com/\w*/`)
-	result1 := r.FindString(gitHttpsUrl)
-	r, _ = regexp.Compile(`[^com/]\w*`)
-	result2 := r.FindString(result1)
-	return result2
+	r := regexp.MustCompile(`https://[^/]+/([^/]+)/`)
+	match := r.FindStringSubmatch(gitHttpsUrl)
+	if len(match) > 1 {
+		return match[1]
+	}
+	log.Warn().Msg("Could not parse repo owner from HTTPS URL")
+	return ""
 }
 
 func parseGithubRepoNameHttps(gitHttpsUrl string) string {
-	r, _ := regexp.Compile(`\.*/.*\.git`)
-	result1 := r.FindString(gitHttpsUrl)
-	r, _ = regexp.Compile(`[^com/]\w*`)
-	result2 := r.FindString(result1)
-	return result2
+	r := regexp.MustCompile(`https://[^/]+/[^/]+/([^ ]+?)(?:\.git)?\s`)
+	match := r.FindStringSubmatch(gitHttpsUrl)
+	if len(match) > 1 {
+		return strings.TrimSuffix(match[1], ".git")
+	}
+	log.Warn().Msg("Could not parse repo name from HTTPS URL")
+	return ""
 }
