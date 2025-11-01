@@ -2,17 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	url := getGitRemoteUrl()
 	url, err := normalizeGitUrl(url)
 	if err != nil {
-		log.Fatal().AnErr("failed to normalize git URL", err)
+		slog.Error("failed to normalize git URL", "err", err)
 	}
 	openUrlInBrowser(url)
 }
@@ -21,7 +20,7 @@ func getGitRemoteUrl() string {
 	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 	out, err := cmd.Output()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get git remote URL")
+		slog.Error("Failed to get git remote URL", "err", err)
 		return ""
 	}
 	return strings.TrimSpace(string(out))
@@ -31,7 +30,6 @@ func normalizeGitUrl(raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 
 	if strings.HasPrefix(raw, "git@") {
-		// Convert git@github.com:owner/repo.git → https://github.com/owner/repo
 		parts := strings.SplitN(raw, ":", 2)
 		if len(parts) != 2 {
 			return "", fmt.Errorf("invalid SSH-style git URL: %s", raw)
@@ -50,12 +48,8 @@ func normalizeGitUrl(raw string) (string, error) {
 
 func openUrlInBrowser(url string) {
 	cmd := exec.Command("open", url)
-	output, err := cmd.Output()
+	_, err := cmd.Output()
 	if err != nil {
-		log.Err(err)
-		log.Error().Msgf("url: %s", url)
-	}
-	if string(output) != "" {
-		log.Warn().Msgf("open url returned output: %s", string(output))
+		slog.Error("error executing open command", "err", err)
 	}
 }
