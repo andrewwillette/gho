@@ -3,11 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
-	"runtime"
-	"runtime/pprof"
 	"strings"
 
 	"github.com/andrewwillette/gocommon"
@@ -21,28 +18,11 @@ const (
 	https
 )
 
-var (
-	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-)
-
 func main() {
 	flag.Parse()
 	gocommon.ConfigureConsoleZerolog()
-	configureProfiling()
-	defer pprof.StopCPUProfile()
 	url := getUrlFromGitRemote()
 	openUrlInBrowser(url)
-}
-
-func configureProfiling() {
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Err(err)
-		}
-		runtime.SetCPUProfileRate(1000000)
-		pprof.StartCPUProfile(f)
-	}
 }
 
 func openUrlInBrowser(url string) {
